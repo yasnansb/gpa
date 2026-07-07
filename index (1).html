@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPA Ledger — Computer Science</title>
+<style>
+  :root{
+    --paper:#f6f1e6;
+    --paper-line:#e3d9c4;
+    --ink:#231f1a;
+    --ink-soft:#5b5347;
+    --maroon:#7a1f2b;
+    --maroon-deep:#5a1620;
+    --gold:#a9822f;
+    --pass:#2f6f4e;
+    --fail:#a23b2e;
+    --focus:#1d5fbf;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, var(--paper-line) 28px),
+      var(--paper);
+    color:var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    line-height:1.5;
+    padding-bottom:60px;
+  }
+
+  a{ color:inherit; }
+
+  /* ---------- Masthead ---------- */
+  .masthead{
+    display:flex;
+    align-items:center;
+    gap:24px;
+    max-width:920px;
+    margin:0 auto;
+    padding:36px 24px 20px;
+    border-bottom:3px double var(--maroon);
+  }
+  .seal{ flex:0 0 auto; }
+  .seal svg{ width:64px; height:64px; }
+
+  .title-block .eyebrow{
+    margin:0 0 4px;
+    font-family: "Courier New", monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--maroon);
+  }
+  .title-block h1{
+    margin:0 0 6px;
+    font-size:clamp(28px, 5vw, 40px);
+    font-weight:700;
+    letter-spacing:.01em;
+  }
+  .program{
+    margin:0;
+    font-size:15px;
+    color:var(--ink-soft);
+  }
+  .program strong{ color:var(--ink); }
+
+  main{
+    max-width:920px;
+    margin:0 auto;
+    padding:0 24px;
+  }
+
+  /* ---------- Ledger / table ---------- */
+  .ledger{ margin-top:34px; position:relative; }
+  .ledger-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+  .ledger-head h2{
+    margin:0;
+    font-size:13px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    font-weight:normal;
+  }
+
+  .info-wrap{ position:relative; }
+  .info-btn{
+    font-family: "Courier New", monospace;
+    font-size:12.5px;
+    letter-spacing:.03em;
+    background:none;
+    border:1px solid var(--maroon);
+    color:var(--maroon);
+    padding:6px 12px;
+    border-radius:999px;
+    cursor:pointer;
+  }
+  .info-btn:hover{ background:var(--maroon); color:var(--paper); }
+  .info-btn:focus-visible, button:focus-visible, .info-btn:focus-visible{
+    outline:3px solid var(--focus);
+    outline-offset:2px;
+  }
+
+  .tooltip{
+    position:absolute;
+    right:0;
+    top:calc(100% + 10px);
+    width:min(520px, 86vw);
+    max-height:60vh;
+    overflow-y:auto;
+    background:#fffdf8;
+    border:1px solid var(--gold);
+    box-shadow:0 12px 30px rgba(30,20,10,.18);
+    padding:20px 22px;
+    z-index:20;
+    font-size:14px;
+  }
+  .info-wrap:hover .tooltip,
+  .tooltip.open{ display:block; }
+  .tooltip{ display:none; }
+
+  .tooltip h3{
+    margin:0 0 8px;
+    font-size:16px;
+    color:var(--maroon-deep);
+    border-bottom:1px solid var(--paper-line);
+    padding-bottom:6px;
+  }
+  .tooltip h4{
+    margin:16px 0 6px;
+    font-size:13px;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  .tooltip ol{ padding-left:20px; margin:8px 0; }
+  .tooltip li{ margin-bottom:8px; }
+  .tooltip .formula{
+    font-family:"Courier New", monospace;
+    background:var(--paper);
+    border:1px solid var(--paper-line);
+    padding:8px 10px;
+    display:block;
+    margin:6px 0;
+  }
+  .tooltip table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+    margin-top:6px;
+  }
+  .tooltip th, .tooltip td{
+    border:1px solid var(--paper-line);
+    padding:5px 6px;
+    text-align:center;
+  }
+  .tooltip th{ background:var(--paper); font-weight:normal; color:var(--ink-soft); }
+  .tooltip .footnote{
+    display:block;
+    margin-top:12px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    font-style:italic;
+  }
+  .tooltip .chart-caption{
+    font-family:"Courier New", monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    text-align:center;
+    margin-top:4px;
+  }
+  .tooltip-close{
+    display:none;
+  }
+  @media (hover:none){
+    .info-wrap:hover .tooltip{ display:none; }
+    .tooltip-close{
+      display:block;
+      margin-top:14px;
+      background:var(--maroon);
+      color:#fff;
+      border:none;
+      padding:8px 14px;
+      border-radius:6px;
+      font-family:inherit;
+      cursor:pointer;
+    }
+  }
+
+  table#courseTable{
+    width:100%;
+    border-collapse:collapse;
+    background:rgba(255,253,248,.6);
+  }
+  #courseTable thead th{
+    text-align:left;
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    font-weight:normal;
+    padding:8px 10px;
+    border-bottom:2px solid var(--maroon);
+  }
+  #courseTable td{
+    padding:10px 10px;
+    border-bottom:1px solid var(--paper-line);
+    font-size:15px;
+    vertical-align:middle;
+  }
+  #courseTable tbody tr:nth-child(even){ background:rgba(233,222,198,.25); }
+  #courseTable td.num, #courseTable th.num{
+    font-family:"Courier New", monospace;
+    text-align:right;
+    white-space:nowrap;
+  }
+  #courseTable tr.added td.course-name::after{
+    content:"add.";
+    margin-left:8px;
+    font-family:"Courier New", monospace;
+    font-size:10px;
+    color:var(--gold);
+    border:1px solid var(--gold);
+    padding:1px 5px;
+    border-radius:999px;
+    vertical-align:middle;
+  }
+  .status{
+    font-family:"Courier New", monospace;
+    font-size:12.5px;
+    font-weight:bold;
+    padding:2px 9px;
+    border-radius:999px;
+    display:inline-block;
+  }
+  .status.yes{ color:var(--pass); border:1px solid var(--pass); }
+  .status.no{ color:var(--fail); border:1px solid var(--fail); }
+
+  /* ---------- Actions / results ---------- */
+  .actions{ margin-top:40px; }
+  .btn-row{ display:flex; gap:14px; flex-wrap:wrap; }
+  .btn-row button{
+    font-family:"Courier New", monospace;
+    font-size:14px;
+    letter-spacing:.03em;
+    padding:13px 22px;
+    border-radius:4px;
+    cursor:pointer;
+    border:2px solid var(--maroon);
+    background:var(--maroon);
+    color:var(--paper);
+    transition: transform .12s ease, background .12s ease;
+  }
+  .btn-row button:hover{ background:var(--maroon-deep); transform:translateY(-1px); }
+  #calcAiBtn{
+    background:transparent;
+    color:var(--maroon);
+  }
+  #calcAiBtn:hover{ background:var(--maroon); color:var(--paper); }
+
+  .ai-note{
+    margin:14px 0 0;
+    font-size:13px;
+    color:var(--ink-soft);
+    max-width:640px;
+    border-left:3px solid var(--gold);
+    padding-left:12px;
+  }
+
+  .results{
+    margin-top:28px;
+    display:flex;
+    align-items:center;
+    gap:26px;
+    flex-wrap:wrap;
+    animation: fadeUp .35s ease both;
+  }
+  @keyframes fadeUp{ from{ opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+  .seal-result{
+    flex:0 0 auto;
+    width:118px;
+    height:118px;
+    border-radius:50%;
+    border:3px solid var(--gold);
+    outline:1px solid var(--maroon);
+    outline-offset:-8px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background:radial-gradient(circle at 50% 40%, #fffdf7, #f3ead6);
+  }
+  .gpa-value{ font-size:30px; font-weight:bold; color:var(--maroon-deep); }
+  .gpa-label{
+    font-family:"Courier New", monospace;
+    font-size:10px;
+    letter-spacing:.2em;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+  }
+  .results-detail{
+    font-size:14px;
+    color:var(--ink-soft);
+    max-width:520px;
+    margin:0;
+  }
+  .results-detail strong{ color:var(--ink); }
+
+  footer{
+    max-width:920px;
+    margin:60px auto 0;
+    padding:16px 24px;
+    border-top:1px solid var(--paper-line);
+    font-size:11px;
+    color:var(--ink-soft);
+    font-family:"Courier New", monospace;
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="seal" aria-hidden="true">
+    <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="30" fill="none" stroke="#7a1f2b" stroke-width="2"/>
+      <circle cx="32" cy="32" r="24" fill="none" stroke="#a9822f" stroke-width="1"/>
+      <text x="32" y="38" text-anchor="middle" font-family="Georgia, serif" font-size="20" fill="#7a1f2b">GPA</text>
+    </svg>
+  </div>
+  <div class="title-block">
+    <p class="eyebrow">Ilia State University · Academic Record</p>
+    <h1>GPA Calculator</h1>
+    <p class="program">Program: <strong id="programName">Computer Science</strong></p>
+  </div>
+</header>
+
+<main>
+  <section class="ledger">
+    <div class="ledger-head">
+      <h2>Course Record</h2>
+      <div class="info-wrap" id="infoWrap">
+        <button class="info-btn" id="infoBtn" aria-expanded="false" aria-controls="tooltip">ⓘ About GPA</button>
+        <div class="tooltip" id="tooltip" role="dialog" aria-label="GPA calculation rule">
+          <h3>GPA Calculation Rule — Ilia State University</h3>
+          <ol>
+            <li>At Ilia State University, GPA (Grade Point Average) is the sum of the products of the Grade Points (GP) earned in each course and the credits obtained for that course, divided by the sum of the credits of all courses the student has taken:
+              <span class="formula">GPA = Σ (GP of each course × credits of each course) / Σ (credits of each course)</span>
+            </li>
+            <li>GP (Grade Point) is the score received in a single course, converted to a 4.00-point scale.</li>
+            <li>Under the GP system, grades fall into the following categories:
+              F: 0–50 pts (Fail) · E: 51–60 · D: 61–70 · C: 71–80 · B: 81–90 · A: 91–95 · A+: 96–100
+            </li>
+            <li>Within each course, an E-category grade (51–60) is always equal to 1.00 GP. The D, C, B and A category grades (61 up to and including 95 points) increase evenly, in steps of 1/12 (≈0.08) per point. An A+ grade (96–100 points) is always equal to 4.00 GP.</li>
+            <li>GPA is awarded for all academic programs except doctoral studies, and is not awarded for certificate programs.</li>
+            <li>Only the final GPA is awarded at Ilia State University, and it is reflected in the diploma supplement (this does not apply to the single-cycle Physician's Diploma program).</li>
+            <li>When the final GPA is calculated, the result is rounded to the nearest tenth.</li>
+          </ol>
+
+          <h4>Table 1 — Conversion of Course Grade to the GP System</h4>
+          <table>
+            <thead><tr><th>Grade</th><th>A+</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th></tr></thead>
+            <tbody>
+              <tr><td>Score range</td><td>96–100</td><td>91–95</td><td>81–90</td><td>71–80</td><td>61–70</td><td>51–60</td><td>0–50</td></tr>
+              <tr><td>GP value</td><td>4.00</td><td>≤3.92</td><td>≤3.50</td><td>≤2.67</td><td>≤1.83</td><td>1.00</td><td>0.00</td></tr>
+            </tbody>
+          </table>
+
+          <svg viewBox="0 0 260 110" style="width:100%;height:auto;margin-top:10px;" aria-hidden="true">
+            <line x1="30" y1="10" x2="30" y2="90" stroke="#5b5347" stroke-width="1"/>
+            <line x1="30" y1="90" x2="250" y2="90" stroke="#5b5347" stroke-width="1"/>
+            <path d="M 30 90 L 60 90 L 78 84 L 138 68 L 174 58 L 190 10 L 250 10"
+                  fill="none" stroke="#7a1f2b" stroke-width="2"/>
+            <text x="4" y="14" font-size="7" fill="#5b5347">4.0</text>
+            <text x="4" y="92" font-size="7" fill="#5b5347">0.0</text>
+            <text x="26" y="102" font-size="7" fill="#5b5347">0</text>
+            <text x="245" y="102" font-size="7" fill="#5b5347">100</text>
+          </svg>
+          <p class="chart-caption">Chart 2 — GP vs. score (0–100)</p>
+
+          <span class="footnote">Note: the fixed ("frozen") GP within the E and A+ ranges reflects that differences within those ranges are not considered meaningful — any score from 51–60 counts as equally low, and any score from 96–100 counts as equally outstanding.</span>
+          <button class="tooltip-close" id="tooltipClose">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <table id="courseTable">
+      <thead>
+        <tr><th>Course</th><th class="num">Credit</th><th class="num">Grade</th><th>Passed</th></tr>
+      </thead>
+      <tbody id="courseBody"></tbody>
+    </table>
+  </section>
+
+  <section class="actions">
+    <div class="btn-row">
+      <button id="calcBtn">Calculate</button>
+      <button id="calcAiBtn">Calculate with Introduction to AI</button>
+    </div>
+    <p class="ai-note">
+      "Calculate with Introduction to AI" recalculates your GPA assuming your final score in
+      <strong>Introduction to Artificial Intelligence</strong> equals your current accumulated points
+      (<span id="aiCurrent">67</span>) plus the 30 points available on the final exam — a projected score of
+      <span id="aiProjected">97</span> — while every other course keeps its current score.
+    </p>
+
+    <div class="results" id="results" hidden>
+      <div class="seal-result">
+        <span class="gpa-value" id="gpaValue">0.0</span>
+        <span class="gpa-label">GPA</span>
+      </div>
+      <p class="results-detail" id="resultsDetail"></p>
+    </div>
+  </section>
+</main>
+
+<footer>Ilia State University · GPA Calculator · gpa/index.html</footer>
+
+<script>
+  // ---- Data ---------------------------------------------------------
+  // "added" courses are the 5 extra courses required by the assignment:
+  // credit 6, grade A (100), counted as passed. Swap the names below for
+  // any 5 courses from your own program if these don't match your catalog.
+  const courses = [
+    { name: "Computer and Society (ENG)",                                   credit: 6, score: 64,  passed: false, added: false },
+    { name: "Cyberlaw and Ethics (ENG)",                                    credit: 6, score: 70,  passed: false, added: false },
+    { name: "Introduction to Artificial Intelligence (ENG)",                credit: 6, score: 67,  passed: false, added: false, isAI: true },
+    { name: "Introduction to Programming (ENG)",                            credit: 6, score: 62,  passed: false, added: false },
+    { name: "Systems, Sustainability, and Climate Change - Introduction (ENG)", credit: 6, score: 49, passed: false, added: false },
+    { name: "Data Structures and Algorithms",  credit: 6, score: 100, passed: true, added: true },
+    { name: "Database Systems",                credit: 6, score: 100, passed: true, added: true },
+    { name: "Operating Systems",               credit: 6, score: 100, passed: true, added: true },
+    { name: "Computer Networks",               credit: 6, score: 100, passed: true, added: true },
+    { name: "Software Engineering",            credit: 6, score: 100, passed: true, added: true }
+  ];
+
+  const AI_CURRENT_POINTS = 67;
+  const AI_FINAL_EXAM_POINTS = 30;
+
+  // ---- Rendering ------------------------------------------------------
+  function letterFor(score){
+    if(score <= 50) return "F";
+    if(score <= 60) return "E";
+    if(score <= 70) return "D";
+    if(score <= 80) return "C";
+    if(score <= 90) return "B";
+    if(score <= 95) return "A";
+    return "A+";
+  }
+
+  function renderTable(){
+    const tbody = document.getElementById("courseBody");
+    tbody.innerHTML = "";
+    courses.forEach(c => {
+      const tr = document.createElement("tr");
+      if(c.added) tr.classList.add("added");
+      tr.innerHTML = `
+        <td class="course-name">${c.name}</td>
+        <td class="num">${c.credit}</td>
+        <td class="num">${c.score.toFixed(2)} (${letterFor(c.score)})</td>
+        <td><span class="status ${c.passed ? "yes" : "no"}">${c.passed ? "Yes" : "No"}</span></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  renderTable();
+
+  // ---- GPA formula (Ilia State University GP conversion) ---------------
+  function gpFromScore(score){
+    if(score <= 50) return 0;
+    if(score <= 60) return 1.00;
+    if(score <= 95) return 1 + (score - 60) / 12;
+    return 4.00; // 96-100
+  }
+
+  function computeGPA(list){
+    let totalPoints = 0;
+    let totalCredits = 0;
+    list.forEach(c => {
+      totalPoints += gpFromScore(c.score) * c.credit;
+      totalCredits += c.credit;
+    });
+    const raw = totalCredits === 0 ? 0 : totalPoints / totalCredits;
+    return Math.round(raw * 10) / 10; // round to nearest tenth
+  }
+
+  function showResult(gpa, detailHtml){
+    document.getElementById("gpaValue").textContent = gpa.toFixed(1);
+    document.getElementById("resultsDetail").innerHTML = detailHtml;
+    document.getElementById("results").hidden = false;
+  }
+
+  document.getElementById("calcBtn").addEventListener("click", () => {
+    const gpa = computeGPA(courses);
+    showResult(gpa, `Calculated from all <strong>${courses.length}</strong> courses shown above, using each course's credit and score converted through the official GP table.`);
+  });
+
+  document.getElementById("calcAiBtn").addEventListener("click", () => {
+    const projected = Math.min(100, AI_CURRENT_POINTS + AI_FINAL_EXAM_POINTS);
+    const modified = courses.map(c => c.isAI ? { ...c, score: projected } : c);
+    const gpa = computeGPA(modified);
+    showResult(gpa, `Assumes <strong>Introduction to Artificial Intelligence</strong> finishes at <strong>${projected}</strong> points (${AI_CURRENT_POINTS} accumulated + ${AI_FINAL_EXAM_POINTS} final exam). All other courses use their current scores.`);
+  });
+
+  // ---- Tooltip (click + hover, with touch-friendly close) --------------
+  const infoBtn = document.getElementById("infoBtn");
+  const tooltip = document.getElementById("tooltip");
+  const infoWrap = document.getElementById("infoWrap");
+
+  function openTooltip(){
+    tooltip.classList.add("open");
+    infoBtn.setAttribute("aria-expanded", "true");
+  }
+  function closeTooltip(){
+    tooltip.classList.remove("open");
+    infoBtn.setAttribute("aria-expanded", "false");
+  }
+  infoBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    tooltip.classList.contains("open") ? closeTooltip() : openTooltip();
+  });
+  document.getElementById("tooltipClose").addEventListener("click", closeTooltip);
+  document.addEventListener("click", (e) => {
+    if(!infoWrap.contains(e.target)) closeTooltip();
+  });
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape") closeTooltip();
+  });
+</script>
+
+</body>
+</html>
